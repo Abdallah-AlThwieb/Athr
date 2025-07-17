@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}إنشاء حساب{% endblock %}
+
+{% block content %}
+<h2 class="mb-4 text-center">إنشاء حساب جديد</h2>
+<form method="post" class="card p-4 shadow-sm bg-white">
+
+  <div class="mb-3">
+    <label for="full_name" class="form-label">الاسم الكامل</label>
+    <input type="text" class="form-control" name="full_name" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="email" class="form-label">البريد الإلكتروني</label>
+    <input type="email" class="form-control" name="email" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="password" class="form-label">كلمة المرور</label>
+    <input type="password" class="form-control" name="password" required>
+  </div>
+
+  <button type="submit" class="btn btn-primary w-100">إنشاء الحساب</button>
+</form>
+
+<p class="text-center mt-3">
+  لديك حساب بالفعل؟ <a href="{{ url_for('auth.login') }}">تسجيل الدخول</a>
+</p>
+{% endblock %}

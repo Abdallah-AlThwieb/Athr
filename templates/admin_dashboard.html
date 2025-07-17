@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}لوحة التحكم{% endblock %}
+{% block content %}
+<h2>لوحة تحكم المشرف</h2>
+
+<h3>➕ إضافة سؤال:</h3>
+<form method="post" action="{{ url_for('admin.add_question') }}">
+  <input name="question" placeholder="نص السؤال" required>
+  <input name="points" type="number" placeholder="النقاط" required>
+  <button type="submit">إضافة</button>
+</form>
+
+<h3>📝 الأسئلة الحالية:</h3>
+<ul>
+  {% for q in questions %}
+    <form method="post" action="{{ url_for('admin.edit_question', question_id=q.id) }}">
+      <input name="text" value="{{ q.text }}" size="50">
+      <input name="points" value="{{ q.points }}" size="5">
+      <button type="submit">💾 تعديل</button>
+      <a href="{{ url_for('admin.delete_question', question_id=q.id) }}" class="btn btn-danger btn-sm">حذف</a>
+    </form>
+  {% endfor %}
+</ul>
+
+<h3>👥 الطلاب ونقاطهم:</h3>
+<table border="1" cellpadding="5">
+  <tr><th>الاسم</th><th>نقاط اليوم</th><th>مجموع النقاط الأسئلة</th><th>نقاط إضافية</th><th>الإجمالي</th><th></th></tr>
+  {% for s in points_summary %}
+    <tr>
+      <td>{{ s.full_name }}</td>
+      <td>{{ s.daily_points }}</td>
+      <td>{{ s.total_points }}</td>
+      <td>{{ s.manual_points }}</td>
+      <td>{{ s.total_points + s.manual_points }}</td>
+      <td><a href="{{ url_for('admin.student_details', student_id=s.id) }}" class="btn btn-info btn-sm">تفاصيل الطالب</a></td>
+    </tr>
+  {% endfor %}
+</table>
+
+<br>
+<a href="{{ url_for('admin.report') }}" class="btn btn-info btn-bg">📊 عرض التقرير الكامل</a>
+{% endblock %}
+

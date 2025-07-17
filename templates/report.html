@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}تقرير الإجابات{% endblock %}
+{% block content %}
+<h2>📊 تقرير الإجابات</h2>
+
+<table border="1" cellpadding="5">
+  <tr><th>الطالب</th><th>السؤال</th><th>التاريخ</th><th>الإجابة</th></tr>
+  {% for row in report %}
+    <tr>
+      <td>{{ row.full_name }}</td>
+      <td>{{ row.text }}</td>
+      <td>{{ row.date }}</td>
+      <td>{{ row.answer }}</td>
+    </tr>
+  {% endfor %}
+</table>
+
+<br>
+<a href="{{ url_for('admin.dashboard') }}" class="btn btn-info btn-bg">🔙 عودة إلى لوحة التحكم</a>
+{% endblock %}

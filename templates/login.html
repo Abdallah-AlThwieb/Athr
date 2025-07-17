@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}تسجيل الدخول{% endblock %}
+
+{% block content %}
+<h2 class="mb-4 text-center">تسجيل الدخول</h2>
+<form method="post" class="card p-4 shadow-sm bg-white">
+
+  <div class="mb-3">
+    <label for="full_name" class="form-label">الاسم الكامل</label>
+    <input type="text" class="form-control" name="full_name" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="password" class="form-label">كلمة المرور</label>
+    <input type="password" class="form-control" name="password" required>
+  </div>
+
+  <button type="submit" class="btn btn-success w-100">دخول</button>
+</form>
+
+<p class="text-center mt-3">
+  ليس لديك حساب؟ <a href="{{ url_for('auth.register') }}">سجل الآن</a>
+</p>
+{% endblock %}

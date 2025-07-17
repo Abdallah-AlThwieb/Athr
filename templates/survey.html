@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}الاستبيان اليومي{% endblock %}
+{% block content %}
+<h2>الأسئلة اليومية</h2>
+<form method="post" action="{{ url_for('survey.submit') }}">
+  {% for q in questions %}
+    <p><strong>{{ q.text }}</strong> ({{ q.points }} نقطة)</p>
+    {% if q.id in answered_ids %}
+      <p style="color: green;"><em>تمت الإجابة</em></p>
+    {% else %}
+      <label><input type="radio" name="{{ q.id }}" value="yes" required> نعم</label>
+      <label><input type="radio" name="{{ q.id }}" value="no"> لا</label>
+    {% endif %}
+    <hr>
+  {% endfor %}
+  <button type="submit">إرسال</button>
+</form>
+{% endblock %}
