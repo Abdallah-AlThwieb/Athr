@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, g, flash
 from datetime import date
-from models import db, Student, Question, Answer, ManualPoint
+from models import Answer, Question, Student, ManualPoint
 from sqlalchemy import func
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -58,10 +58,10 @@ def add_question():
 def delete_question(question_id):
     question = Question.query.get_or_404(question_id)
 
-    # أولًا: حذف الإجابات المرتبطة بهذا السؤال
+    # حذف الإجابات المرتبطة أولًا
     Answer.query.filter_by(question_id=question.id).delete()
 
-    # ثانيًا: حذف السؤال نفسه
+    # حذف السؤال نفسه
     db.session.delete(question)
     db.session.commit()
 
