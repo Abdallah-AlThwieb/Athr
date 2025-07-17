@@ -118,3 +118,9 @@ def add_manual_points(student_id):
     db.session.commit()
 
     return redirect(url_for('admin.student_details', student_id=student_id))
+
+@admin_bp.route('/question/<int:question_id>')
+def question_detail(question_id):
+    question = Question.query.get_or_404(question_id)
+    answers = Answer.query.filter_by(question_id=question_id).all()
+    return render_template('question_detail.html', question=question, answers=answers)

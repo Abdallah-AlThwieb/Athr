@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}تفاصيل السؤال{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h3>تفاصيل السؤال</h3>
+    <div class="card p-3 mb-4">
+        <h5>{{ question.text }}</h5>
+        <p><strong>عدد النقاط:</strong> {{ question.points }}</p>
+    </div>
+
+    <h5>الإجابات:</h5>
+    {% if answers %}
+        <ul class="list-group">
+            {% for answer in answers %}
+                <li class="list-group-item">
+                    <strong>{{ answer.student.full_name }}</strong> - {{ answer.response }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>لا توجد إجابات بعد.</p>
+    {% endif %}
+</div>
+{% endblock %}
