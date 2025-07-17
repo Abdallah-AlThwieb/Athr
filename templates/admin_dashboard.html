@@ -1,76 +1,78 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="container mt-5">
-    <h2 class="text-center mb-4">لوحة تحكم المشرف</h2>
+<div class="container mt-4">
+  <h2 class="text-center mb-4">لوحة تحكم المشرف</h2>
 
-    <div class="row">
-        <!-- الطلاب -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-success text-white text-center">
-                    الطلاب
-                </div>
-                <ul class="list-group list-group-flush">
-                    {% for student in students %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><strong>{{ student.full_name }}</strong></span>
-                        <span class="badge bg-secondary">{{ student.email }}</span>
-                        <a href="{{ url_for('admin.student_details', student_id=student.id) }}" class="btn btn-outline-info btn-sm">التفاصيل</a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
+  <div class="row">
+    <!-- الأسئلة -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <span>الأسئلة</span>
+          <a href="{{ url_for('admin.add_question') }}" class="btn btn-light btn-sm">إضافة سؤال</a>
         </div>
-
-        <!-- الأسئلة -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <span>الأسئلة</span>
-                    <a href="{{ url_for('admin.add_question') }}" class="btn btn-light btn-sm">إضافة سؤال</a>
-                </div>
-                <ul class="list-group list-group-flush">
-                    {% for q in questions %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ q.content }}
-                        <a href="{{ url_for('admin.delete_question', id=q.id) }}" class="btn btn-outline-danger btn-sm">حذف</a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
+        <ul class="list-group list-group-flush">
+          {% for q in questions %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>{{ q.text }}</span>
+            <a href="{{ url_for('admin.delete_question', question_id=q.id) }}" class="btn btn-outline-danger btn-sm">حذف</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
 
-    <!-- ملخص النقاط -->
-    <div class="card mt-4 shadow">
-        <div class="card-header bg-info text-white text-center">
-            ملخص النقاط
-        </div>
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped text-center">
-                <thead class="table-light">
-                    <tr>
-                        <th>اسم الطالب</th>
-                        <th>التفاصيل</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in points_summary %}
-                    <tr>
-                        <td>{{ row.full_name }}</td>
-                        <td>
-                            {% set details = [] %}
-                            {% if row.total_presence %} {% set _ = details.append(row.total_presence ~ ' حضور') %} {% endif %}
-                            {% if row.total_sport %} {% set _ = details.append(row.total_sport ~ ' رياضي') %} {% endif %}
-                            {% if row.total_culture %} {% set _ = details.append(row.total_culture ~ ' ثقافي') %} {% endif %}
-                            {% if row.total_best_student %} {% set _ = details.append(row.total_best_student ~ ' أفضل طالب') %} {% endif %}
-                            {{ details | join(' | ') if details else '—' }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <!-- الطلاب -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-success text-white">الطلاب</div>
+        <ul class="list-group list-group-flush">
+          {% for s in students %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <span class="fw-bold">{{ s.full_name }}</span>
+              <span class="badge bg-secondary mx-2">{{ s.email }}</span>
+            </div>
+            <a href="{{ url_for('admin.student_details', student_id=s.id) }}" class="btn btn-outline-info btn-sm">التفاصيل</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
+  </div>
+
+  <!-- جدول ملخص النقاط -->
+  <div class="card shadow">
+    <div class="card-header bg-info text-white text-center">
+      ملخص النقاط
+    </div>
+    <div class="card-body table-responsive">
+      <table class="table table-bordered text-center">
+        <thead class="table-light">
+          <tr>
+            <th>اسم الطالب</th>
+            <th>نقاط الإجابات</th>
+            <th>النقاط اليدوية</th>
+            <th>المجموع الكلي</th>
+            <th>التفاصيل</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student, answer_points, manual_points, total_points in points_summary %}
+          <tr>
+            <td>{{ student.full_name }}</td>
+            <td>{{ answer_points }}</td>
+            <td>{{ manual_points }}</td>
+            <td>{{ total_points }}</td>
+            <td>
+              <a href="{{ url_for('admin.student_details', student_id=student.id) }}" class="btn btn-outline-info btn-sm">التفاصيل</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 {% endblock %}
