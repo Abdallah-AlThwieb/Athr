@@ -1,78 +1,43 @@
 {% extends "base.html" %}
-
+{% block title %}لوحة التحكم{% endblock %}
 {% block content %}
-<div class="container mt-4">
-  <h2 class="text-center mb-4">لوحة تحكم المشرف</h2>
+<h2>لوحة تحكم المشرف</h2>
 
-  <div class="row">
-    <!-- الأسئلة -->
-    <div class="col-md-6 mb-4">
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-          <span>الأسئلة</span>
-          <a href="{{ url_for('admin.add_question') }}" class="btn btn-light btn-sm">إضافة سؤال</a>
-        </div>
-        <ul class="list-group list-group-flush">
-          {% for q in questions %}
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span>{{ q.text }}</span>
-            <a href="{{ url_for('admin.delete_question', id=q.id) }}" class="btn btn-outline-danger btn-sm">حذف</a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
+<h3>➕ إضافة سؤال:</h3>
+<form method="post" action="{{ url_for('admin.add_question') }}">
+  <input name="question" placeholder="نص السؤال" required>
+  <input name="points" type="number" placeholder="النقاط" required>
+  <button type="submit">إضافة</button>
+</form>
 
-    <!-- الطلاب -->
-    <div class="col-md-6 mb-4">
-      <div class="card shadow">
-        <div class="card-header bg-success text-white">الطلاب</div>
-        <ul class="list-group list-group-flush">
-          {% for s in students %}
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-              <span class="fw-bold">{{ s.full_name }}</span>
-              <span class="badge bg-secondary mx-2">{{ s.email }}</span>
-            </div>
-            <a href="{{ url_for('admin.student_details', student_id=s.id) }}" class="btn btn-outline-info btn-sm">التفاصيل</a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-  </div>
+<h3>📝 الأسئلة الحالية:</h3>
+<ul>
+  {% for q in questions %}
+    <form method="post" action="{{ url_for('admin.edit_question', question_id=q.id) }}">
+      <input name="text" value="{{ q.text }}" size="50">
+      <input name="points" value="{{ q.points }}" size="5">
+      <button type="submit">💾 تعديل</button>
+      <a href="{{ url_for('admin.delete_question', question_id=q.id) }}" class="btn btn-outline-danger btn-sm">حذف</a>
+    </form>
+  {% endfor %}
+</ul>
 
-  <!-- جدول ملخص النقاط -->
-  <div class="card shadow">
-    <div class="card-header bg-info text-white text-center">
-      ملخص النقاط
-    </div>
-    <div class="card-body table-responsive">
-      <table class="table table-bordered text-center">
-        <thead class="table-light">
-          <tr>
-            <th>اسم الطالب</th>
-            <th>نقاط الإجابات</th>
-            <th>النقاط اليدوية</th>
-            <th>المجموع الكلي</th>
-            <th>التفاصيل</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for student, answer_points, manual_points, total_points in points_summary %}
-          <tr>
-            <td>{{ student.full_name }}</td>
-            <td>{{ answer_points }}</td>
-            <td>{{ manual_points }}</td>
-            <td>{{ total_points }}</td>
-            <td>
-              <a href="{{ url_for('admin.student_details', student_id=student.id) }}" class="btn btn-outline-info btn-sm">التفاصيل</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
+<h3>👥 الطلاب ونقاطهم:</h3>
+<table border="1" cellpadding="5">
+  <tr><th>الاسم</th><th>نقاط اليوم</th><th>مجموع النقاط الأسئلة</th><th>نقاط إضافية</th><th>الإجمالي</th><th></th></tr>
+  {% for s in points_summary %}
+    <tr>
+      <td>{{ s.full_name }}</td>
+      <td>{{ s.daily_points }}</td>
+      <td>{{ s.total_points }}</td>
+      <td>{{ s.manual_points }}</td>
+      <td>{{ s.total_points + s.manual_points }}</td>
+      <td><a href="{{ url_for('admin.student_details', student_id=s.id) }}" class="btn btn-info btn-sm">تفاصيل الطالب</a></td>
+    </tr>
+  {% endfor %}
+</table>
+
+<br>
+<a href="{{ url_for('admin.report') }}" class="btn btn-info btn-bg">📊 عرض التقرير الكامل</a>
 {% endblock %}
+
