@@ -54,11 +54,22 @@ def add_question():
     db.session.commit()
     return redirect(url_for('admin.dashboard'))
 
-@admin_bp.route('/delete-question/<int:question_id>')
-def delete_question(question_id):
-    question = Question.query.get_or_404(question_id)
-    db.session.delete(question)
-    db.session.commit()
+@admin_bp.route('/delete-question/<int:id>')
+def delete_question(id):
+    question = Question.query.get(id)
+    if question:
+        try:
+            # حذف جميع الإجابات المرتبطة بالسؤال أولًا
+            Answer.query.filter_by(question_id=question.id).delete()
+
+            db.session.delete(question)
+            db.session.commit()
+            flash('تم حذف السؤال بنجاح', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'حدث خطأ أثناء حذف السؤال: {str(e)}', 'error')
+    else:
+        flash('السؤال غير موجود', 'error')
     return redirect(url_for('admin.dashboard'))
 
 @admin_bp.route('/edit-question/<int:question_id>', methods=['POST'])
