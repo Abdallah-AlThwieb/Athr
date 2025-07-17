@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: athr
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    runtime: python-3.10
+    branch: main
+    plan: free
+    autoDeploy: true
