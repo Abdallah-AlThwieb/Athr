@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, g, fla
 from datetime import date
 from models import Answer, Question, Student, ManualPoint
 from sqlalchemy import func
+from app import db
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
