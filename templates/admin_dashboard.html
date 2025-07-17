@@ -65,12 +65,17 @@
     <div class="card-body">
       {% if points_summary %}
         <ul class="list-group">
-          {% for student, points in points_summary %}
-             <tr>
-             <td>{{ student.full_name }}</td>
-             <td>{{ points }}</td>
-             </tr>
-          {% endfor %}
+          {% for p in points_summary %}
+<tr>
+  <td>{{ p.full_name }}</td>
+  <td>{{ p.daily_points }}</td>
+  <td>{{ p.total_points }}</td>
+  <td>{{ p.manual_points }}</td>
+  <td>
+    <a href="{{ url_for('admin.student_details', student_id=p.id) }}" class="btn btn-sm btn-outline-info">التفاصيل</a>
+  </td>
+</tr>
+{% endfor %}
         </ul>
       {% else %}
         <p class="text-muted">لا يوجد بيانات نقاط لعرضها.</p>
