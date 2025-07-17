@@ -1,11 +1,7 @@
 services:
   - type: web
     name: athr
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app"
-    branch: main
+    env: docker
     plan: free
+    branch: main
     autoDeploy: true
-
-
