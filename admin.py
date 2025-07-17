@@ -14,13 +14,11 @@ def dashboard():
     questions = Question.query.order_by(Question.id).all()
 
     points_summary = []
-    for s in students:
-        daily = db.session.query(func.coalesce(func.sum(Question.points), 0)).join(Answer).filter(
-            Answer.student_id == s.id,
-            Answer.date == date.today(),
-            Answer.answer == 'yes',
-            Question.id == Answer.question_id
-        ).scalar()
+    for student in students:
+        answer_points = sum(ans.points for ans in student.answers)
+        manual_points = sum(mp.points for mp in student.manual_points)
+        total_points = answer_points + manual_points
+        points_summary.append((student, answer_points, manual_points, total_points))
 
         total = db.session.query(func.coalesce(func.sum(Question.points), 0)).join(Answer).filter(
             Answer.student_id == s.id,
