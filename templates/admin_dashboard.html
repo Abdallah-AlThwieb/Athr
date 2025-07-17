@@ -25,7 +25,6 @@
               <div class="card-body">
                 <h5 class="card-title">{{ q.text }}</h5>
                 <div class="d-flex justify-content-between">
-                  <a href="{{ url_for('admin.question_detail', question_id=q.id) }}" class="btn btn-outline-primary btn-sm">التفاصيل</a>
                   <a href="{{ url_for('admin.delete_question', id=q.id) }}" class="btn btn-outline-danger btn-sm"
                      onclick="return confirm('هل أنت متأكد أنك تريد حذف هذا السؤال؟');">
                     حذف
