@@ -66,10 +66,10 @@
       {% if points_summary %}
         <ul class="list-group">
           {% for student, points in points_summary %}
-            <li class="list-group-item d-flex justify-content-between">
-              <strong>{{ student }}</strong>
-              <span class="badge bg-dark">{{ points }} نقطة</span>
-            </li>
+             <tr>
+             <td>{{ student.full_name }}</td>
+             <td>{{ points }}</td>
+             </tr>
           {% endfor %}
         </ul>
       {% else %}
