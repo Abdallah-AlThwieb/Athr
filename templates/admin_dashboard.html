@@ -1,43 +1,82 @@
 {% extends "base.html" %}
-{% block title %}لوحة التحكم{% endblock %}
 {% block content %}
-<h2>لوحة تحكم المشرف</h2>
+<div class="container mt-4">
+  <h2 class="mb-4 text-center">لوحة تحكم المشرف</h2>
 
-<h3>➕ إضافة سؤال:</h3>
-<form method="post" action="{{ url_for('admin.add_question') }}">
-  <input name="question" placeholder="نص السؤال" required>
-  <input name="points" type="number" placeholder="النقاط" required>
-  <button type="submit">إضافة</button>
-</form>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
-<h3>📝 الأسئلة الحالية:</h3>
-<ul>
-  {% for q in questions %}
-    <form method="post" action="{{ url_for('admin.edit_question', question_id=q.id) }}">
-      <input name="text" value="{{ q.text }}" size="50">
-      <input name="points" value="{{ q.points }}" size="5">
-      <button type="submit">💾 تعديل</button>
-      <a href="{{ url_for('admin.delete_question', question_id=q.id) }}" class="btn btn-danger btn-sm">حذف</a>
-    </form>
-  {% endfor %}
-</ul>
+  <div class="row">
+    <!-- الأسئلة -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">الأسئلة</div>
+        <div class="card-body">
+          {% for q in questions %}
+            <div class="card mb-3">
+              <div class="card-body">
+                <h5 class="card-title">{{ q.text }}</h5>
+                <div class="d-flex justify-content-between">
+                  <a href="{{ url_for('admin.question_detail', question_id=q.id) }}" class="btn btn-outline-primary btn-sm">التفاصيل</a>
+                  <a href="{{ url_for('admin.delete_question', id=q.id) }}" class="btn btn-outline-danger btn-sm"
+                     onclick="return confirm('هل أنت متأكد أنك تريد حذف هذا السؤال؟');">
+                    حذف
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <p class="text-muted">لا توجد أسئلة حالياً.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
 
-<h3>👥 الطلاب ونقاطهم:</h3>
-<table border="1" cellpadding="5">
-  <tr><th>الاسم</th><th>نقاط اليوم</th><th>مجموع النقاط الأسئلة</th><th>نقاط إضافية</th><th>الإجمالي</th><th></th></tr>
-  {% for s in points_summary %}
-    <tr>
-      <td>{{ s.full_name }}</td>
-      <td>{{ s.daily_points }}</td>
-      <td>{{ s.total_points }}</td>
-      <td>{{ s.manual_points }}</td>
-      <td>{{ s.total_points + s.manual_points }}</td>
-      <td><a href="{{ url_for('admin.student_details', student_id=s.id) }}" class="btn btn-info btn-sm">تفاصيل الطالب</a></td>
-    </tr>
-  {% endfor %}
-</table>
+    <!-- الطلاب -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-success text-white">الطلاب</div>
+        <div class="card-body">
+          {% for s in students %}
+            <div class="card mb-2">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <span>{{ s.full_name }}</span>
+                <span class="badge bg-secondary">{{ s.email }}</span>
+              </div>
+            </div>
+          {% else %}
+            <p class="text-muted">لا يوجد طلاب مسجلين حالياً.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
 
-<br>
-<a href="{{ url_for('admin.report') }}" class="btn btn-info btn-bg">📊 عرض التقرير الكامل</a>
+  <!-- ملخص النقاط -->
+  <div class="card mt-4 shadow">
+    <div class="card-header bg-info text-white">ملخص النقاط</div>
+    <div class="card-body">
+      {% if points_summary %}
+        <ul class="list-group">
+          {% for student, points in points_summary.items() %}
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>{{ student }}</strong>
+              <span class="badge bg-dark">{{ points }} نقطة</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted">لا يوجد بيانات نقاط لعرضها.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
 {% endblock %}
-
