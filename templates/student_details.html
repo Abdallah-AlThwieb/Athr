@@ -1,40 +1,70 @@
 {% extends "base.html" %}
-{% block title %}تفاصيل الطالب{% endblock %}
+{% block title %}نادي سعادتي{% endblock %}
 {% block content %}
-<h2>🧑‍🎓 تفاصيل الطالب: {{ student.full_name }}</h2>
 
-<h3>الإجابات:</h3>
-<table border="1" cellpadding="5">
-  <tr><th>السؤال</th><th>النقاط</th><th>الإجابة</th><th>التاريخ</th></tr>
-  {% for answer, question in answers %}
-    <tr>
-      <td>{{ question.text }}</td>
-      <td>{{ question.points }}</td>
-      <td>{{ answer.answer }}</td>
-      <td>{{ answer.date }}</td>
-    </tr>
-  {% endfor %}
-</table>
+<div class="container mt-4" dir="rtl">
+  <h2 class="mb-4 text-primary">🧑‍🎓 تفاصيل الطالب: <strong>{{ student.full_name }}</strong></h2>
 
-<h3>📌 النقاط اليدوية:</h3>
-<table border="1" cellpadding="5">
-  <tr><th>النقاط</th><th>السبب</th><th>التاريخ</th></tr>
-  {% for m in manual %}
-    <tr>
-      <td>{{ m.points }}</td>
-      <td>{{ m.reason }}</td>
-      <td>{{ m.date }}</td>
-    </tr>
-  {% endfor %}
-</table>
+  <h4 class="text-secondary">📝 الإجابات:</h4>
+  <div class="table-responsive mb-4">
+    <table class="table table-bordered table-hover text-center align-middle bg-white shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th>السؤال</th>
+          <th>النقاط</th>
+          <th>الإجابة</th>
+          <th>التاريخ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for answer, question in answers %}
+        <tr>
+          <td class="text-start">{{ question.text }}</td>
+          <td class="text-success fw-bold">{{ question.points }}</td>
+          <td>{{ answer.answer }}</td>
+          <td>{{ answer.date.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-<h4>➕ إضافة نقاط أخرى:</h4>
-<form method="post" action="{{ url_for('admin.add_manual_points', student_id=student.id) }}">
-  <input type="number" name="points" required placeholder="عدد النقاط">
-  <input type="text" name="reason" placeholder="سبب الإضافة">
-  <button type="submit">إضافة</button>
-</form>
+  <h4 class="text-secondary">📌 النقاط اليدوية:</h4>
+  <div class="table-responsive mb-4">
+    <table class="table table-bordered table-hover text-center align-middle bg-white shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th>النقاط</th>
+          <th>السبب</th>
+          <th>التاريخ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in manual %}
+        <tr>
+          <td class="text-success fw-bold">{{ m.points }}</td>
+          <td>{{ m.reason }}</td>
+          <td>{{ m.date.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-<br>
-<a href="{{ url_for('admin.dashboard') }}" class="btn btn-info btn-sm">🔙 عودة</a>
+  <h5 class="text-secondary">➕ إضافة نقاط أخرى:</h5>
+  <form method="post" action="{{ url_for('admin.add_manual_points', student_id=student.id) }}" class="row g-2 mb-4">
+    <div class="col-md-3">
+      <input type="number" name="points" class="form-control" placeholder="عدد النقاط" required>
+    </div>
+    <div class="col-md-6">
+      <input type="text" name="reason" class="form-control" placeholder="سبب الإضافة">
+    </div>
+    <div class="col-md-3">
+      <button type="submit" class="btn btn-success w-100">➕ إضافة</button>
+    </div>
+  </form>
+
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary">🔙 عودة إلى لوحة التحكم</a>
+</div>
+
 {% endblock %}

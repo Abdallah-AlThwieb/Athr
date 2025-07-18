@@ -1,43 +1,66 @@
 {% extends "base.html" %}
 {% block title %}نادي سعادتي{% endblock %}
 {% block content %}
-<h2>لوحة تحكم المشرف</h2>
+<div class="container mt-4">
+  <h2 class="mb-4">لوحة تحكم المشرف</h2>
 
-<h3>➕ إضافة سؤال:</h3>
-<form method="post" action="{{ url_for('admin.add_question') }}">
-  <input name="question" placeholder="نص السؤال" required>
-  <input name="points" type="number" placeholder="النقاط" required>
-  <button type="submit">إضافة</button>
-</form>
+  <h4 class="text-primary mb-3">➕ إضافة سؤال:</h4>
+  <form method="post" action="{{ url_for('admin.add_question') }}" class="mb-5 d-flex gap-2 flex-wrap">
+    <input name="question" placeholder="نص السؤال" required class="form-control w-50">
+    <input name="points" type="number" placeholder="النقاط" required class="form-control w-25">
+    <button type="submit" class="btn btn-success">إضافة</button>
+  </form>
 
-<h3>📝 الأسئلة الحالية:</h3>
-<ul>
-  {% for q in questions %}
-    <form method="post" action="{{ url_for('admin.edit_question', question_id=q.id) }}">
-      <input name="text" value="{{ q.text }}" size="50">
-      <input name="points" value="{{ q.points }}" size="5">
-      <button type="submit">💾 تعديل</button>
-      <a href="{{ url_for('admin.delete_question', question_id=q.id) }}" class="btn btn-outline-danger btn-sm">حذف</a>
-    </form>
-  {% endfor %}
-</ul>
+  <h4 class="text-primary mb-3">📝 الأسئلة الحالية:</h4>
+  <div class="mb-5">
+    {% for q in questions %}
+      <form method="post" action="{{ url_for('admin.edit_question', question_id=q.id) }}" class="question-box rounded p-3 mb-3">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-6">
+            <input name="text" value="{{ q.text }}" class="form-control">
+          </div>
+          <div class="col-md-2">
+            <input name="points" value="{{ q.points }}" class="form-control">
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-outline-light btn-sm">💾 تعديل</button>
+            <a href="{{ url_for('admin.delete_question', question_id=q.id) }}" class="btn btn-outline-danger btn-sm">🗑️ حذف</a>
+          </div>
+        </div>
+      </form>
+    {% endfor %}
+  </div>
 
-<h3>👥 الطلاب ونقاطهم:</h3>
-<table border="1" cellpadding="5">
-  <tr><th>الاسم</th><th>نقاط اليوم</th><th>مجموع النقاط الأسئلة</th><th>نقاط إضافية</th><th>الإجمالي</th><th></th></tr>
-  {% for s in points_summary %}
-    <tr>
-      <td>{{ s.full_name }}</td>
-      <td>{{ s.daily_points }}</td>
-      <td>{{ s.total_points }}</td>
-      <td>{{ s.manual_points }}</td>
-      <td>{{ s.total_points + s.manual_points }}</td>
-      <td><a href="{{ url_for('admin.student_details', student_id=s.id) }}" class="btn btn-info btn-sm">تفاصيل الطالب</a></td>
-    </tr>
-  {% endfor %}
-</table>
+  <h4 class="text-primary mb-3">👥 الطلاب ونقاطهم:</h4>
+  <div class="table-responsive">
+    <table class="table table-bordered table-dark table-hover text-center align-middle rounded shadow-sm overflow-hidden">
+      <thead class="table-secondary text-dark">
+        <tr>
+          <th>الاسم</th>
+          <th>نقاط اليوم</th>
+          <th>مجموع النقاط (الأسئلة)</th>
+          <th>نقاط إضافية</th>
+          <th>المجموع الكلي</th>
+          <th>تفاصيل</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in points_summary %}
+          <tr>
+            <td>{{ s.full_name }}</td>
+            <td>{{ s.daily_points }}</td>
+            <td>{{ s.total_points }}</td>
+            <td>{{ s.manual_points }}</td>
+            <td class="fw-bold">{{ s.total_points + s.manual_points }}</td>
+            <td><a href="{{ url_for('admin.student_details', student_id=s.id) }}" class="btn btn-info btn-sm">📄 عرض</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-<br>
-<a href="{{ url_for('admin.report') }}" class="btn btn-info btn-bg">📊 عرض التقرير الكامل</a>
+  <div class="mt-4">
+    <a href="{{ url_for('admin.report') }}" class="btn btn-primary">📊 عرض التقرير الكامل</a>
+  </div>
+</div>
 {% endblock %}
-
