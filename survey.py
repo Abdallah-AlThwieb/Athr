@@ -11,7 +11,7 @@ def index():
         return redirect(url_for('auth.login'))
 
     if g.user.is_admin:
-        return redirect(url_for('admin.dashboard'))  # أو abort(403)
+        return redirect(url_for('admin.dashboard'))
 
     questions = Question.query.all()
     answered_ids = [
@@ -27,10 +27,15 @@ def submit():
         return redirect(url_for('auth.login'))
 
     for qid, value in request.form.items():
+        question = Question.query.get(int(qid))
+        if not question:
+            continue  # تجاهل الأسئلة المحذوفة
+
         try:
             answer = Answer(
                 student_id=g.user.id,
-                question_id=int(qid),
+                question_id=question.id,
+                question_text=question.text,  # ✅ تخزين النص هنا
                 date=date.today(),
                 answer=value
             )
@@ -40,11 +45,12 @@ def submit():
             db.session.rollback()
             existing = Answer.query.filter_by(
                 student_id=g.user.id,
-                question_id=int(qid),
+                question_id=question.id,
                 date=date.today()
             ).first()
             if existing:
                 existing.answer = value
+                existing.question_text = question.text  # ✅ تحديث النص أيضًا عند التعديل
                 db.session.commit()
 
     return redirect(url_for('survey.index'))

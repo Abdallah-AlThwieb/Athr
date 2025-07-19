@@ -1,20 +1,49 @@
 {% extends "base.html" %}
-{% block title %}تقرير الإجابات{% endblock %}
+{% block title %}نادي سعادتي{% endblock %}
+
 {% block content %}
-<h2>📊 تقرير الإجابات</h2>
+<div class="container mt-4">
+  <h2 class="mb-4">📊 تقرير الإجابات</h2>
 
-<table border="1" cellpadding="5">
-  <tr><th>الطالب</th><th>السؤال</th><th>التاريخ</th><th>الإجابة</th></tr>
-  {% for row in report %}
-    <tr>
-      <td>{{ row.full_name }}</td>
-      <td>{{ row.text }}</td>
-      <td>{{ row.date }}</td>
-      <td>{{ row.answer }}</td>
-    </tr>
-  {% endfor %}
-</table>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped text-center align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>الطالب</th>
+          <th>السؤال</th>
+          <th>التاريخ</th>
+          <th>الإجابة</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in data %}
+          <tr>
+            <td>{{ row.student }}</td>
+            <td>{{ row.question }}</td>
+            <td>{{ row.date }}</td>
+            <td>{{ row.answer }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <h3>📊 ملخص الإجابات:</h3>
+<img src="{{ url_for('static', filename='charts/answer_summary.png') }}" class="img-fluid mb-4">
 
-<br>
-<a href="{{ url_for('admin.dashboard') }}" class="btn btn-info btn-bg">🔙 عودة إلى لوحة التحكم</a>
+<h3>🏆 أعلى الطلاب نقاطًا:</h3>
+<img src="{{ url_for('static', filename='charts/top_students.png') }}" class="img-fluid mb-4">
+  {% if charts %}
+  <div class="my-4">
+    <h4 class="text-info">📊 رسوم بيانية:</h4>
+    {% for chart in charts %}
+      <div class="my-3">
+        <img src="{{ url_for('static', filename=chart.split('static/')[-1]) }}" class="img-fluid rounded shadow-sm">
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+  <div class="mt-4">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-info">🔙 عودة إلى لوحة التحكم</a>
+  </div>
+</div>
 {% endblock %}

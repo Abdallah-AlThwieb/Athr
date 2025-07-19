@@ -5,9 +5,9 @@ db = SQLAlchemy()
 class Student(db.Model):
     __tablename__ = 'students'
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    full_name = db.Column(db.String(100), unique=True, nullable=False)  # ✅ الآن فريد
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(50), nullable=False)
+    full_name = db.Column(db.String(100), unique=True, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
     answers = db.relationship('Answer', backref='student', lazy=True)
@@ -27,7 +27,8 @@ class Answer(db.Model):
     __tablename__ = 'answers'
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
-    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=True)  # لم يعد required
+    question_text = db.Column(db.Text, nullable=False)  # ✅ جديد: تخزين نص السؤال وقت الإجابة
     date = db.Column(db.Date, nullable=False)
     answer = db.Column(db.String(10), nullable=False)
 
