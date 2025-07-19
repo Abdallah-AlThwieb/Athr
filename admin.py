@@ -81,7 +81,7 @@ def edit_question(question_id):
     db.session.commit()
     return redirect(url_for('admin.dashboard'))
 
-@admin_bp.route("/admin/report")
+@admin_bp.route("/report")
 @login_required
 def report():
     if not current_user.is_admin:
