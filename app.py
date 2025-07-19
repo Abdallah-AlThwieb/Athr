@@ -7,7 +7,6 @@ from survey import survey
 from admin import admin_bp
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
 
 app = Flask(__name__)
