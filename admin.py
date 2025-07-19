@@ -88,8 +88,6 @@ def report():
         flash("غير مصرح لك بالدخول إلى هذه الصفحة", "error")
         return redirect(url_for("auth.login"))
 
-    users = User.query.all()
-    questions = Question.query.all()
     answers = Answer.query.all()
 
     # إعداد المجلد لحفظ الرسوم
