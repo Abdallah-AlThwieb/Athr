@@ -1,5 +1,7 @@
 from flask import Flask
 from flask_migrate import Migrate
+from flask_login import LoginManager
+from models import Student
 from models import db
 from auth import auth
 from survey import survey
@@ -12,7 +14,15 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
 
+login_manager = LoginManager()
 migrate = Migrate()
+
+login_manager.login_view = 'auth.login'  # أو اسم مسارك لتسجيل الدخول
+login_manager.init_app(app)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Student.query.get(int(user_id))
 
 # إعداد الاتصال بقاعدة البيانات
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
