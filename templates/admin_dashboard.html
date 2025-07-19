@@ -2,19 +2,27 @@
 {% block title %}نادي سعادتي{% endblock %}
 {% block content %}
 <div class="container mt-4">
-  <h2 class="mb-4">لوحة تحكم المشرف</h2>
+  <h2 class="mb-4 text-center">📋 لوحة تحكم المشرف</h2>
 
+  <!-- إضافة سؤال -->
   <h4 class="text-primary mb-3">➕ إضافة سؤال:</h4>
-  <form method="post" action="{{ url_for('admin.add_question') }}" class="mb-5 d-flex gap-2 flex-wrap">
-    <input name="question" placeholder="نص السؤال" required class="form-control w-50">
-    <input name="points" type="number" placeholder="النقاط" required class="form-control w-25">
-    <button type="submit" class="btn btn-success">إضافة</button>
+  <form method="post" action="{{ url_for('admin.add_question') }}" class="mb-5 row g-2">
+    <div class="col-md-6">
+      <input name="question" placeholder="نص السؤال" required class="form-control">
+    </div>
+    <div class="col-md-3">
+      <input name="points" type="number" placeholder="النقاط" required class="form-control">
+    </div>
+    <div class="col-md-3">
+      <button type="submit" class="btn btn-success w-100">➕ إضافة</button>
+    </div>
   </form>
 
+  <!-- عرض الأسئلة -->
   <h4 class="text-primary mb-3">📝 الأسئلة الحالية:</h4>
   <div class="mb-5">
     {% for q in questions %}
-      <form method="post" action="{{ url_for('admin.edit_question', question_id=q.id) }}" class="question-box rounded p-3 mb-3">
+      <form method="post" action="{{ url_for('admin.edit_question', question_id=q.id) }}" class="question-box rounded p-3 mb-3 border border-light bg-light">
         <div class="row g-2 align-items-center">
           <div class="col-md-6">
             <input name="text" value="{{ q.text }}" class="form-control">
@@ -22,8 +30,8 @@
           <div class="col-md-2">
             <input name="points" value="{{ q.points }}" class="form-control">
           </div>
-          <div class="col-auto">
-            <button type="submit" class="btn btn-outline-light btn-sm">💾 تعديل</button>
+          <div class="col-md-4 text-end">
+            <button type="submit" class="btn btn-outline-success btn-sm me-2">💾 تعديل</button>
             <a href="{{ url_for('admin.delete_question', question_id=q.id) }}" class="btn btn-outline-danger btn-sm">🗑️ حذف</a>
           </div>
         </div>
@@ -31,16 +39,17 @@
     {% endfor %}
   </div>
 
+  <!-- جدول الطلاب -->
   <h4 class="text-primary mb-3">👥 الطلاب ونقاطهم:</h4>
   <div class="table-responsive">
-    <table class="table table-bordered table-dark table-hover text-center align-middle rounded shadow-sm overflow-hidden">
-      <thead class="table-secondary text-dark">
+    <table class="table table-bordered table-striped text-center align-middle shadow-sm">
+      <thead class="table-dark">
         <tr>
           <th>الاسم</th>
           <th>نقاط اليوم</th>
           <th>مجموع النقاط (الأسئلة)</th>
           <th>نقاط إضافية</th>
-          <th>المجموع الكلي</th>
+          <th class="text-success">المجموع الكلي</th>
           <th>تفاصيل</th>
         </tr>
       </thead>
@@ -51,16 +60,23 @@
             <td>{{ s.daily_points }}</td>
             <td>{{ s.total_points }}</td>
             <td>{{ s.manual_points }}</td>
-            <td class="fw-bold">{{ s.total_points + s.manual_points }}</td>
-            <td><a href="{{ url_for('admin.student_details', student_id=s.id) }}" class="btn btn-info btn-sm">📄 عرض</a></td>
+            <td class="fw-bold text-success">{{ s.total_points + s.manual_points }}</td>
+            <td>
+              <a href="{{ url_for('admin.student_details', student_id=s.id) }}" class="btn btn-info btn-sm">
+                📄 عرض
+              </a>
+            </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
-  <div class="mt-4">
-    <a href="{{ url_for('admin.report') }}" class="btn btn-primary">📊 عرض التقرير الكامل</a>
+  <!-- زر عرض التقرير -->
+  <div class="text-center mt-5">
+    <a href="{{ url_for('admin.report') }}" class="btn btn-primary btn-lg">
+      📊 عرض التقرير الكامل
+    </a>
   </div>
 </div>
 {% endblock %}

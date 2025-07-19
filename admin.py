@@ -14,9 +14,11 @@ matplotlib.rcParams['font.family'] = 'Tahoma'  # أو أي خط عربي متو�
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 @admin_bp.route('/')
+@login_required
 def dashboard():
-    if not g.user or not g.user.is_admin:
-        return redirect(url_for('auth.login'))
+    if not current_user.is_authenticated or not current_user.is_admin:
+        flash("غير مصرح لك بالدخول", "error")
+        return redirect(url_for("auth.login"))
 
     students = Student.query.filter_by(is_admin=False).order_by(Student.full_name).all()
     questions = Question.query.order_by(Question.id).all()
@@ -90,17 +92,15 @@ def report():
 
     answers = Answer.query.all()
 
-    # إعداد المجلد لحفظ الرسوم
+    # إعداد مجلد الرسوم
     chart_dir = os.path.join("static", "charts")
     os.makedirs(chart_dir, exist_ok=True)
-
-    # حذف الرسوم القديمة
     for file in os.listdir(chart_dir):
         file_path = os.path.join(chart_dir, file)
         if os.path.isfile(file_path):
             os.remove(file_path)
 
-    # تحليل البيانات باستخدام pandas
+    # معالجة البيانات
     df = pd.DataFrame([{
         "user": a.user.full_name,
         "question": a.question_text,
@@ -111,40 +111,44 @@ def report():
     chart_paths = []
 
     if not df.empty:
-        # عدد الإجابات "نعم" و "لا"
+        # إجابات نعم/لا - Pie Chart
         answer_counts = df['answer'].value_counts()
         plt.figure()
-        answer_counts.plot(kind='bar', color=['skyblue', 'salmon'])
-        plt.title('عدد الإجابات نعم / لا')
-        plt.xlabel('الإجابة')
-        plt.ylabel('العدد')
-        chart1_path = os.path.join(chart_dir, 'answers_bar.png')
-        plt.savefig(chart1_path)
+        plt.pie(answer_counts, labels=answer_counts.index, autopct='%1.1f%%', colors=['#4CAF50', '#F44336'])
+        plt.title('نسبة الإجابات نعم / لا')
+        chart1_path = os.path.join(chart_dir, 'answers_pie.png')
+        plt.savefig(chart1_path, bbox_inches='tight')
         chart_paths.append(chart1_path)
         plt.close()
 
-        # أكثر الطلاب نقاطًا
-        top_users = df.groupby('user')['points'].sum().sort_values(ascending=False)
-        plt.figure()
-        top_users.plot(kind='bar', color='mediumseagreen')
+        # الطلاب الأعلى نقاطًا - Horizontal Bar
+        top_users = df.groupby('user')['points'].sum().sort_values()
+        plt.figure(figsize=(8, 6))
+        top_users.plot(kind='barh', color='steelblue')
         plt.title('الطلاب الأعلى نقاطًا')
-        plt.xlabel('الطالب')
-        plt.ylabel('النقاط')
-        chart2_path = os.path.join(chart_dir, 'top_users.png')
+        plt.xlabel('النقاط')
+        plt.ylabel('الطالب')
+        plt.tight_layout()
+        chart2_path = os.path.join(chart_dir, 'top_students_barh.png')
         plt.savefig(chart2_path)
         chart_paths.append(chart2_path)
         plt.close()
 
-        # توزيع النقاط باستخدام seaborn
-        plt.figure()
-        sns.histplot(df['points'], kde=True, bins=10, color='mediumpurple')
-        plt.title('توزيع النقاط')
+        # توزيع النقاط - Histogram (رسم بياني عمودي)
+        plt.figure(figsize=(8, 5))
+        df['points'].value_counts().sort_index().plot(kind='bar', color='darkorange')
+        plt.title('عدد الإجابات حسب عدد النقاط')
         plt.xlabel('النقاط')
         plt.ylabel('عدد الإجابات')
-        chart3_path = os.path.join(chart_dir, 'points_dist.png')
+        plt.xticks(rotation=0)
+        plt.tight_layout()
+        chart3_path = os.path.join(chart_dir, 'points_histogram.png')
         plt.savefig(chart3_path)
         chart_paths.append(chart3_path)
         plt.close()
+
+    users = Student.query.all()
+    questions = Question.query.all()
 
     return render_template("admin_report.html", users=users, questions=questions, answers=answers, chart_paths=chart_paths)
 
