@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_migrate import Migrate
 from models import db
 from auth import auth
 from survey import survey
@@ -11,12 +12,15 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
 
+migrate = Migrate()
+
 # إعداد الاتصال بقاعدة البيانات
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # تهيئة قاعدة البيانات
 db.init_app(app)
+migrate.init_app(app, db)
 
 # تسجيل Blueprints
 app.register_blueprint(auth)

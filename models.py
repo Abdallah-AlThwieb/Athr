@@ -5,8 +5,8 @@ db = SQLAlchemy()
 class Student(db.Model):
     __tablename__ = 'students'
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(200), unique=True, nullable=False)
+    password = db.Column(db.String(250), nullable=False)
     full_name = db.Column(db.String(100), unique=True, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
