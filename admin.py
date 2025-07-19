@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 from sqlalchemy import case
+import matplotlib
+matplotlib.rcParams['font.family'] = 'Tahoma'  # أو أي خط عربي متوفر
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -100,6 +102,11 @@ def report():
     chart_dir = os.path.join('static', 'charts')
     os.makedirs(chart_dir, exist_ok=True)
 
+    # حذف الصور القديمة من مجلد charts
+    for file in os.listdir(chart_dir):
+        if file.endswith(".png"):
+            os.remove(os.path.join(chart_dir, file))
+
     # 1. عدّاد إجابات نعم/لا
     if not df.empty:
         answer_counts = df['answer'].value_counts()
@@ -115,7 +122,7 @@ def report():
     top_students_query = db.session.query(
         Student.full_name,
         (
-            func.coalesce(func.sum(case([(Answer.answer == 'yes', Question.points)], else_=0)), 0) +
+            func.coalesce(func.sum(case((Answer.answer == 'yes', Question.points), else_=0)), 0) +
             func.coalesce(func.sum(ManualPoint.points), 0)
         ).label('total_points')
     ).select_from(Student) \
@@ -130,9 +137,12 @@ def report():
     if not top_df.empty:
         plt.figure(figsize=(7, 4))
         sns.barplot(data=top_df, x='total_points', y='full_name', palette='viridis')
-        plt.title('📊 أكثر 5 طلاب نقاطًا (إجابات + يدوي)')
-        plt.xlabel('المجموع الكلي للنقاط')
-        plt.ylabel('الاسم')
+        plt.title('📊 أكثر 5 طلاب نقاطًا (إجابات + يدوي)', fontsize=13, loc='right')
+        plt.xlabel('المجموع الكلي للنقاط', fontsize=11)
+        plt.ylabel('اسم الطالب', fontsize=11)
+        plt.xticks(fontsize=10)
+        plt.yticks(fontsize=10)
+        plt.tight_layout()
         plt.savefig(os.path.join(chart_dir, 'top_students.png'))
         plt.close()
 
