@@ -80,73 +80,75 @@ def edit_question(question_id):
     db.session.commit()
     return redirect(url_for('admin.dashboard'))
 
-@admin_bp.route('/report')
+@admin_bp.route("/admin/report")
+@login_required
 def report():
-    if not g.user or not g.user.is_admin:
-        return redirect(url_for('auth.login'))
+    if not current_user.is_admin:
+        flash("غير مصرح لك بالدخول إلى هذه الصفحة", "error")
+        return redirect(url_for("auth.login"))
 
-    # جلب البيانات من قاعدة البيانات
-    report_data = db.session.query(
-        Student.full_name,
-        Question.text,
-        Answer.date,
-        Answer.answer
-    ).join(Answer, Student.id == Answer.student_id) \
-     .join(Question, Question.id == Answer.question_id) \
-     .order_by(Answer.date.desc(), Student.full_name).all()
+    users = User.query.all()
+    questions = Question.query.all()
+    answers = Answer.query.all()
 
-    # تحويلها إلى DataFrame
-    df = pd.DataFrame(report_data, columns=['full_name', 'question', 'date', 'answer'])
-
-    # إنشاء مجلد الرسوم إذا لم يكن موجودًا
-    chart_dir = os.path.join('static', 'charts')
+    # إعداد المجلد لحفظ الرسوم
+    chart_dir = os.path.join("static", "charts")
     os.makedirs(chart_dir, exist_ok=True)
 
-    # حذف الصور القديمة من مجلد charts
+    # حذف الرسوم القديمة
     for file in os.listdir(chart_dir):
-        if file.endswith(".png"):
-            os.remove(os.path.join(chart_dir, file))
+        file_path = os.path.join(chart_dir, file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
 
-    # 1. عدّاد إجابات نعم/لا
+    # تحليل البيانات باستخدام pandas
+    df = pd.DataFrame([{
+        "user": a.user.full_name,
+        "question": a.question_text,
+        "answer": a.answer_text,
+        "points": a.points
+    } for a in answers])
+
+    chart_paths = []
+
     if not df.empty:
+        # عدد الإجابات "نعم" و "لا"
         answer_counts = df['answer'].value_counts()
-        plt.figure(figsize=(5, 4))
-        sns.barplot(x=answer_counts.index, y=answer_counts.values, palette='Set2')
-        plt.title('إجمالي عدد الإجابات')
-        plt.ylabel('العدد')
+        plt.figure()
+        answer_counts.plot(kind='bar', color=['skyblue', 'salmon'])
+        plt.title('عدد الإجابات نعم / لا')
         plt.xlabel('الإجابة')
-        plt.savefig(os.path.join(chart_dir, 'answers_count.png'))
+        plt.ylabel('العدد')
+        chart1_path = os.path.join(chart_dir, 'answers_bar.png')
+        plt.savefig(chart1_path)
+        chart_paths.append(chart1_path)
         plt.close()
 
-    # 2. أكثر الطلاب نقاطًا (نعم + يدويًا)
-    top_students_query = db.session.query(
-        Student.full_name,
-        (
-            func.coalesce(func.sum(case((Answer.answer == 'yes', Question.points), else_=0)), 0) +
-            func.coalesce(func.sum(ManualPoint.points), 0)
-        ).label('total_points')
-    ).select_from(Student) \
-     .outerjoin(Answer, Answer.student_id == Student.id) \
-     .outerjoin(Question, Question.id == Answer.question_id) \
-     .outerjoin(ManualPoint, ManualPoint.student_id == Student.id) \
-     .group_by(Student.full_name) \
-     .order_by(func.sum(Question.points + ManualPoint.points).desc()) \
-     .limit(5).all()
-
-    top_df = pd.DataFrame(top_students_query, columns=['full_name', 'total_points'])
-    if not top_df.empty:
-        plt.figure(figsize=(7, 4))
-        sns.barplot(data=top_df, x='total_points', y='full_name', palette='viridis')
-        plt.title('📊 أكثر 5 طلاب نقاطًا (إجابات + يدوي)', fontsize=13, loc='right')
-        plt.xlabel('المجموع الكلي للنقاط', fontsize=11)
-        plt.ylabel('اسم الطالب', fontsize=11)
-        plt.xticks(fontsize=10)
-        plt.yticks(fontsize=10)
-        plt.tight_layout()
-        plt.savefig(os.path.join(chart_dir, 'top_students.png'))
+        # أكثر الطلاب نقاطًا
+        top_users = df.groupby('user')['points'].sum().sort_values(ascending=False)
+        plt.figure()
+        top_users.plot(kind='bar', color='mediumseagreen')
+        plt.title('الطلاب الأعلى نقاطًا')
+        plt.xlabel('الطالب')
+        plt.ylabel('النقاط')
+        chart2_path = os.path.join(chart_dir, 'top_users.png')
+        plt.savefig(chart2_path)
+        chart_paths.append(chart2_path)
         plt.close()
 
-    return render_template('report.html', report=report_data)
+        # توزيع النقاط باستخدام seaborn
+        plt.figure()
+        sns.histplot(df['points'], kde=True, bins=10, color='mediumpurple')
+        plt.title('توزيع النقاط')
+        plt.xlabel('النقاط')
+        plt.ylabel('عدد الإجابات')
+        chart3_path = os.path.join(chart_dir, 'points_dist.png')
+        plt.savefig(chart3_path)
+        chart_paths.append(chart3_path)
+        plt.close()
+
+    return render_template("admin_report.html", users=users, questions=questions, answers=answers, chart_paths=chart_paths)
+
 
 @admin_bp.route('/student/<int:student_id>')
 def student_details(student_id):
