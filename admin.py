@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 from sqlalchemy import case
-import matplotlib
-matplotlib.rcParams['font.family'] = 'Tahoma'  # أو أي خط عربي متوفر
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -25,19 +23,17 @@ def dashboard():
 
     points_summary = []
     for s in students:
-        daily = db.session.query(func.coalesce(func.sum(Question.points), 0)).join(Answer).filter(
+        daily = db.session.query(func.coalesce(func.sum(Answer.question_points), 0)).filter(
             Answer.student_id == s.id,
             Answer.date == date.today(),
-            Answer.answer == 'yes',
-            Question.id == Answer.question_id
-        ).scalar()
-
-        total = db.session.query(func.coalesce(func.sum(Question.points), 0)).join(Answer).filter(
+            Answer.answer == 'yes'
+            ).scalar()
+        
+        total = db.session.query(func.coalesce(func.sum(Answer.question_points), 0)).filter(
             Answer.student_id == s.id,
-            Answer.answer == 'yes',
-            Question.id == Answer.question_id
-        ).scalar()
-
+            Answer.answer == 'yes'
+            ).scalar()
+        
         manual = db.session.query(func.coalesce(func.sum(ManualPoint.points), 0)).filter_by(student_id=s.id).scalar()
 
         points_summary.append({
@@ -68,11 +64,13 @@ def add_question():
 def delete_question(question_id):
     question = Question.query.get_or_404(question_id)
 
-    # فقط حذف السؤال بدون حذف الإجابات، لأن نص السؤال محفوظ داخل Answer.question_text
+    # أزل الربط مع الإجابات بدلًا من حذفها
+    for answer in question.answers:
+        answer.question_id = None  # إزالة الربط
     db.session.delete(question)
     db.session.commit()
 
-    flash('تم حذف السؤال بنجاح.', 'success')
+    flash('تم حذف السؤال بنجاح دون حذف الإجابات.', 'success')
     return redirect(url_for('admin.dashboard'))
 
 @admin_bp.route('/edit-question/<int:question_id>', methods=['POST'])
@@ -102,10 +100,10 @@ def report():
 
     # معالجة البيانات
     df = pd.DataFrame([{
-        "user": a.user.full_name,
+        "user": a.student.full_name,
         "question": a.question_text,
-        "answer": a.answer_text,
-        "points": a.points
+        "answer": a.answer,
+        "points": a.question_points
     } for a in answers])
 
     chart_paths = []
@@ -150,13 +148,13 @@ def report():
     users = Student.query.all()
     questions = Question.query.all()
 
-    return render_template("admin_report.html", users=users, questions=questions, answers=answers, chart_paths=chart_paths)
+    return render_template("report.html", users=users, questions=questions, answers=answers, chart_paths=chart_paths)
 
 
 @admin_bp.route('/student/<int:student_id>')
 def student_details(student_id):
     student = Student.query.get_or_404(student_id)
-    answers = db.session.query(Answer, Question).join(Question).filter(Answer.student_id == student.id).order_by(Answer.date.desc()).all()
+    answers = Answer.query.filter_by(student_id=student.id).order_by(Answer.date.desc()).all()
     manual = ManualPoint.query.filter_by(student_id=student.id).order_by(ManualPoint.date.desc()).all()
 
     return render_template('student_details.html', student=student, answers=answers, manual=manual)

@@ -1,8 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 
 db = SQLAlchemy()
 
-class Student(db.Model):
+class Student(UserMixin, db.Model):
     __tablename__ = 'students'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(200), unique=True, nullable=False)
@@ -19,16 +20,23 @@ class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=False)
     points = db.Column(db.Integer, nullable=False, default=0)
+    answers = db.relationship(
+    'Answer',
+    backref='question',
+    lazy=True,
+    cascade="save-update, merge, refresh-expire, expunge",  # ✅ لا تشمل delete
+    passive_deletes=True  # ✅ يمنع حذف الأب من حذف الأبناء تلقائيًا
+)
 
-    answers = db.relationship('Answer', backref='question', lazy=True)
 
 
 class Answer(db.Model):
     __tablename__ = 'answers'
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
-    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=True)  # لم يعد required
-    question_text = db.Column(db.Text, nullable=False)  # ✅ جديد: تخزين نص السؤال وقت الإجابة
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=True)
+    question_text = db.Column(db.Text, nullable=False)
+    question_points = db.Column(db.Integer, nullable=False, default=0)  # ✅ نقاط السؤال وقت الإجابة
     date = db.Column(db.Date, nullable=False)
     answer = db.Column(db.String(10), nullable=False)
 

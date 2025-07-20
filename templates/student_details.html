@@ -17,10 +17,10 @@
         </tr>
       </thead>
       <tbody>
-        {% for answer, question in answers %}
+        {% for answer in answers %}
         <tr>
-          <td class="text-start">{{ question.text }}</td>
-          <td class="text-success fw-bold">{{ question.points }}</td>
+          <td class="text-start">{{ answer.question_text }}</td>
+          <td class="text-success fw-bold">{{ answer.question_points }}</td>
           <td>{{ answer.answer }}</td>
           <td>{{ answer.date.strftime('%Y-%m-%d') }}</td>
         </tr>
