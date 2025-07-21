@@ -1,8 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from sqlalchemy import JSON
 
 db = SQLAlchemy()
+
 
 class Student(UserMixin, db.Model):
     __tablename__ = 'students'
@@ -21,8 +21,14 @@ class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=False)
     points = db.Column(db.Integer, nullable=False, default=0)
+    question_type = db.Column(db.String(20), nullable=False, default='boolean')
 
-    visible_days = db.Column(JSON, nullable=True)  # ✅ الأيام المخصصة لعرض السؤال
+    visible_days = db.relationship(
+        'VisibleDay',
+        backref='question',
+        lazy=True,
+        cascade='all, delete-orphan'
+    )
 
     answers = db.relationship(
         'Answer',
@@ -33,13 +39,20 @@ class Question(db.Model):
     )
 
 
+class VisibleDay(db.Model):
+    __tablename__ = 'visible_days'
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id', ondelete='CASCADE'), nullable=False)
+    day_index = db.Column(db.Integer, nullable=False)  # 0 = الإثنين، 6 = الأحد
+
+
 class Answer(db.Model):
     __tablename__ = 'answers'
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
     question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=True)
     question_text = db.Column(db.Text, nullable=False)
-    question_points = db.Column(db.Integer, nullable=False, default=0)  # ✅ نقاط السؤال وقت الإجابة
+    question_points = db.Column(db.Integer, nullable=False, default=0)
     date = db.Column(db.Date, nullable=False)
     answer = db.Column(db.String(10), nullable=False)
 
