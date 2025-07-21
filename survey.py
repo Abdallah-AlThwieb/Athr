@@ -12,7 +12,15 @@ def index():
     if current_user.is_admin:
         return redirect(url_for('admin.dashboard'))
 
-    questions = Question.query.all()
+    from datetime import datetime
+    today_index = datetime.today().weekday()  # 0 = الإثنين, 6 = الأحد
+
+    questions = Question.query.filter(
+        (Question.visible_days == None) |               # يظهر دائمًا
+        (Question.visible_days == []) |                 # لا أيام محددة
+        (Question.visible_days.contains([today_index])) # يظهر في هذا اليوم
+    ).all()
+
     answered_ids = [
         ans.question_id for ans in Answer.query
         .filter_by(student_id=current_user.id, date=date.today()).all()

@@ -13,7 +13,22 @@
     <div class="col-md-3">
       <input name="points" type="number" placeholder="النقاط" required class="form-control">
     </div>
-    <div class="col-md-3">
+    <div class="col-md-12 mt-2">
+      <label class="form-label">🗓️ الأيام التي يظهر فيها السؤال (اتركها فارغة ليظهر كل الأيام)</label>
+      <div class="d-flex flex-wrap gap-2">
+        {% set days = [
+          (0, "الإثنين"), (1, "الثلاثاء"), (2, "الأربعاء"),
+          (3, "الخميس"), (4, "الجمعة"), (5, "السبت"), (6, "الأحد")
+        ] %}
+        {% for num, name in days %}
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" name="visible_days" value="{{ num }}" id="day{{ num }}">
+            <label class="form-check-label" for="day{{ num }}">{{ name }}</label>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col-md-3 mt-3">
       <button type="submit" class="btn btn-success w-100">➕ إضافة</button>
     </div>
   </form>
@@ -33,6 +48,20 @@
           <div class="col-md-4 text-end">
             <button type="submit" class="btn btn-outline-success btn-sm me-2">💾 تعديل</button>
             <a href="{{ url_for('admin.delete_question', question_id=q.id) }}" class="btn btn-outline-danger btn-sm">🗑️ حذف</a>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <label class="form-label mb-1">🗓️ الأيام التي يظهر فيها السؤال:</label>
+          <div class="d-flex flex-wrap gap-2">
+            {% for num, name in days %}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="visible_days" value="{{ num }}"
+                       id="edit_day{{ q.id }}_{{ num }}"
+                       {% if q.visible_days and num in q.visible_days %}checked{% endif %}>
+                <label class="form-check-label" for="edit_day{{ q.id }}_{{ num }}">{{ name }}</label>
+              </div>
+            {% endfor %}
           </div>
         </div>
       </form>

@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from sqlalchemy import JSON
 
 db = SQLAlchemy()
 
@@ -20,14 +21,16 @@ class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=False)
     points = db.Column(db.Integer, nullable=False, default=0)
-    answers = db.relationship(
-    'Answer',
-    backref='question',
-    lazy=True,
-    cascade="save-update, merge, refresh-expire, expunge",  # ✅ لا تشمل delete
-    passive_deletes=True  # ✅ يمنع حذف الأب من حذف الأبناء تلقائيًا
-)
 
+    visible_days = db.Column(JSON, nullable=True)  # ✅ الأيام المخصصة لعرض السؤال
+
+    answers = db.relationship(
+        'Answer',
+        backref='question',
+        lazy=True,
+        cascade="save-update, merge, refresh-expire, expunge",
+        passive_deletes=True
+    )
 
 
 class Answer(db.Model):

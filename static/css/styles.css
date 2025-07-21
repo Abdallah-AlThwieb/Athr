@@ -189,3 +189,7 @@ i {
 i:hover {
   color: #00bcd4;
 }
+
+.question-box .form-check-label {
+  color: #000 !important;
+}

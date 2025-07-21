@@ -50,14 +50,20 @@ def dashboard():
 def add_question():
     text = request.form['question']
     points = request.form.get('points', type=int)
+    visible_days_raw = request.form.getlist('visible_days')  # ← قائمة نصوص من checkboxes
 
     if not text or points is None:
         flash('يجب إدخال نص السؤال والنقاط')
         return redirect(url_for('admin.dashboard'))
 
-    question = Question(text=text, points=points)
+    # تحويل الأيام إلى أرقام (int)، أو None إن لم يتم اختيار شيء
+    visible_days = [int(d) for d in visible_days_raw] if visible_days_raw else None
+
+    question = Question(text=text, points=points, visible_days=visible_days)
     db.session.add(question)
     db.session.commit()
+
+    flash('تمت إضافة السؤال بنجاح ✅', 'success')
     return redirect(url_for('admin.dashboard'))
 
 @admin_bp.route('/delete-question/<int:question_id>')
@@ -76,9 +82,16 @@ def delete_question(question_id):
 @admin_bp.route('/edit-question/<int:question_id>', methods=['POST'])
 def edit_question(question_id):
     question = Question.query.get_or_404(question_id)
+
     question.text = request.form['text']
     question.points = request.form.get('points', type=int)
+
+    visible_days_raw = request.form.getlist('visible_days')
+    question.visible_days = [int(d) for d in visible_days_raw] if visible_days_raw else None
+
     db.session.commit()
+    flash("تم تعديل السؤال بنجاح ✅", "success")
+
     return redirect(url_for('admin.dashboard'))
 
 @admin_bp.route("/report")
@@ -98,58 +111,63 @@ def report():
         if os.path.isfile(file_path):
             os.remove(file_path)
 
-    # معالجة البيانات
+    # تجهيز البيانات
     df = pd.DataFrame([{
-        "user": a.student.full_name,
-        "question": a.question_text,
-        "answer": a.answer,
-        "points": a.question_points
+        "student": a.student.full_name if a.student else "غير معروف",
+        "question": a.question_text or "—",
+        "answer": a.answer or "—",
+        "date": a.date.strftime("%Y-%m-%d") if a.date else "—",
+        "points": a.question_points or 0
     } for a in answers])
 
     chart_paths = []
 
     if not df.empty:
-        # إجابات نعم/لا - Pie Chart
-        answer_counts = df['answer'].value_counts()
-        plt.figure()
-        plt.pie(answer_counts, labels=answer_counts.index, autopct='%1.1f%%', colors=['#4CAF50', '#F44336'])
-        plt.title('نسبة الإجابات نعم / لا')
-        chart1_path = os.path.join(chart_dir, 'answers_pie.png')
-        plt.savefig(chart1_path, bbox_inches='tight')
-        chart_paths.append(chart1_path)
-        plt.close()
+        # الرسم 1: Bar - أعلى 10 طلاب نقاطًا (عمودي)
+        top_users = (
+            df.groupby('student')['points']
+            .sum()
+            .sort_values(ascending=False)
+            .head(10)
+        )
 
-        # الطلاب الأعلى نقاطًا - Horizontal Bar
-        top_users = df.groupby('user')['points'].sum().sort_values()
-        plt.figure(figsize=(8, 6))
-        top_users.plot(kind='barh', color='steelblue')
-        plt.title('الطلاب الأعلى نقاطًا')
-        plt.xlabel('النقاط')
-        plt.ylabel('الطالب')
+        plt.figure(figsize=(10, 6))
+        sns.barplot(x=top_users.index, y=top_users.values, palette="viridis")
+        plt.title('🏆 أعلى 10 طلاب نقاطًا')
+        plt.xlabel('الطالب')
+        plt.ylabel('مجموع النقاط')
+        plt.xticks(rotation=45, ha='right')
         plt.tight_layout()
-        chart2_path = os.path.join(chart_dir, 'top_students_barh.png')
-        plt.savefig(chart2_path)
-        chart_paths.append(chart2_path)
+        chart1_path = os.path.join(chart_dir, 'top_students_vertical.png')
+        plt.savefig(chart1_path)
+        chart_paths.append('charts/top_students_vertical.png')
         plt.close()
 
-        # توزيع النقاط - Histogram (رسم بياني عمودي)
-        plt.figure(figsize=(8, 5))
-        df['points'].value_counts().sort_index().plot(kind='bar', color='darkorange')
-        plt.title('عدد الإجابات حسب عدد النقاط')
-        plt.xlabel('النقاط')
-        plt.ylabel('عدد الإجابات')
-        plt.xticks(rotation=0)
-        plt.tight_layout()
-        chart3_path = os.path.join(chart_dir, 'points_histogram.png')
-        plt.savefig(chart3_path)
-        chart_paths.append(chart3_path)
-        plt.close()
+        # الرسم 2: لكل سؤال، من الطالب الذي أجاب بـ "نعم" أكثر
+        yes_df = df[df['answer'] == 'yes']
+        if not yes_df.empty:
+            counts = yes_df.groupby(['question', 'student']).size().reset_index(name='count')
+            pivot_df = counts.pivot(index='question', columns='student', values='count').fillna(0)
 
-    users = Student.query.all()
-    questions = Question.query.all()
+            plt.figure(figsize=(12, 6))
+            pivot_df.plot(kind='bar', stacked=True, colormap='tab20', figsize=(12, 6))
+            plt.title('📌 الطلاب الأكثر إجابة بـ "نعم" لكل سؤال')
+            plt.xlabel('السؤال')
+            plt.ylabel('عدد مرات الإجابة بـ نعم')
+            plt.xticks(rotation=45, ha='right')
+            plt.legend(title='الطالب', bbox_to_anchor=(1.05, 1), loc='upper left')
+            plt.tight_layout()
+            chart2_path = os.path.join(chart_dir, 'yes_answers_per_question.png')
+            plt.savefig(chart2_path)
+            chart_paths.append('charts/yes_answers_per_question.png')
+            plt.close()
 
-    return render_template("report.html", users=users, questions=questions, answers=answers, chart_paths=chart_paths)
-
+    return render_template(
+        "report.html",
+        answers=answers,
+        chart_paths=chart_paths,
+        data=df.to_dict(orient='records')
+    )
 
 @admin_bp.route('/student/<int:student_id>')
 def student_details(student_id):
