@@ -53,6 +53,7 @@ class Answer(db.Model):
     question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=True)
     question_text = db.Column(db.Text, nullable=False)
     question_points = db.Column(db.Integer, nullable=False, default=0)
+    question_type = db.Column(db.String(20), nullable=False, default='boolean')
     date = db.Column(db.Date, nullable=False)
     answer = db.Column(db.String(10), nullable=False)
 
