@@ -9,9 +9,9 @@ with app.app_context():
     existing = Student.query.filter_by(full_name="admin").first()
     if not existing:
         admin = Student(
-            email="Omar@gmail.com",
-            full_name="عمر محمد الذويب",
-            password=generate_password_hash("Omar2006"),
+            email="Khaled@gmail.com",
+            full_name="خالد سلمان العنبري",
+            password=generate_password_hash("Khaled2025"),
             is_admin=True
         )
         db.session.add(admin)
