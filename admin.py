@@ -181,11 +181,15 @@ def report():
 
     df = pd.DataFrame(df)
 
-    # 🔥 حساب الطالب الأعلى نقاطًا
-    top_student_row = df.groupby('student')['points'].sum().sort_values(ascending=False).reset_index()
-    if not top_student_row.empty:
-        top_student_name = top_student_row.iloc[0]['student']
-        top_student_points = top_student_row.iloc[0]['points']
+    # 🔥 حساب الطالب الأعلى نقاطًا مع الحماية من الخطأ
+    if 'student' in df.columns and not df.empty:
+        top_student_row = df.groupby('student')['points'].sum().sort_values(ascending=False).reset_index()
+        if not top_student_row.empty:
+            top_student_name = top_student_row.iloc[0]['student']
+            top_student_points = top_student_row.iloc[0]['points']
+        else:
+            top_student_name = "لا يوجد"
+            top_student_points = 0
     else:
         top_student_name = "لا يوجد"
         top_student_points = 0
@@ -218,6 +222,7 @@ def report():
         if not yes_df.empty:
             counts = yes_df.groupby(['question', 'student']).size().reset_index(name='count')
             pivot_df = counts.pivot(index='question', columns='student', values='count').fillna(0)
+            pivot_df = pivot_df.sort_index()
 
             plt.figure(figsize=(12, 6))
             pivot_df.plot(kind='bar', stacked=True, colormap='tab20', figsize=(12, 6))
@@ -239,7 +244,7 @@ def report():
         data=df.to_dict(orient='records'),
         top_student_name=top_student_name,
         top_student_points=top_student_points
-        )
+    )
 
 @admin_bp.route('/student/<int:student_id>')
 def student_details(student_id):
