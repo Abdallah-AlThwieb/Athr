@@ -8,7 +8,8 @@
   {% if data %}
     <div class="alert alert-light text-center mb-4">
       👥 عدد الطلاب المشاركين: <strong>{{ data | map(attribute='student') | unique | list | length }}</strong> |
-      📄 عدد الإجابات: <strong>{{ data | length }}</strong>
+      📄 عدد الإجابات: <strong>{{ data | length }}</strong> |
+      👑 الطالب الأعلى نقاطًا: <strong class="text-success fw-bold">{{ top_student_name }}</strong> ({{ top_student_points }} نقطة)
     </div>
 
     <div class="table-responsive mb-5">

@@ -13,6 +13,12 @@
     <div class="col-md-3">
       <input name="points" type="number" placeholder="النقاط" required class="form-control">
     </div>
+    <div class="col-md-3">
+      <select name="question_type" class="form-select" required>
+        <option value="boolean">نعم / لا</option>
+        <option value="numeric">رقمي (يدخل الطالب الرقم كنقاط)</option>
+      </select>
+    </div>
     <div class="col-md-12 mt-2">
       <label class="form-label">🗓️ الأيام التي يظهر فيها السؤال (اتركها فارغة ليظهر كل الأيام)</label>
       <div class="d-flex flex-wrap gap-2">
@@ -37,15 +43,22 @@
   <h4 class="text-primary mb-3">📝 الأسئلة الحالية:</h4>
   <div class="mb-5">
     {% for q in questions %}
+    {% set day_indexes = q.visible_days | map(attribute='day_index') | list %}
       <form method="post" action="{{ url_for('admin.edit_question', question_id=q.id) }}" class="question-box rounded p-3 mb-3 border border-light bg-light">
         <div class="row g-2 align-items-center">
-          <div class="col-md-6">
+          <div class="col-md-5">
             <input name="text" value="{{ q.text }}" class="form-control">
           </div>
           <div class="col-md-2">
             <input name="points" value="{{ q.points }}" class="form-control">
           </div>
-          <div class="col-md-4 text-end">
+          <div class="col-md-3">
+            <select name="question_type" class="form-select">
+              <option value="boolean" {% if q.question_type == 'boolean' %}selected{% endif %}>نعم / لا</option>
+              <option value="numeric" {% if q.question_type == 'numeric' %}selected{% endif %}>رقمي</option>
+            </select>
+          </div>
+          <div class="col-md-2 text-end">
             <button type="submit" class="btn btn-outline-success btn-sm me-2">💾 تعديل</button>
             <a href="{{ url_for('admin.delete_question', question_id=q.id) }}" class="btn btn-outline-danger btn-sm">🗑️ حذف</a>
           </div>
@@ -58,7 +71,7 @@
               <div class="form-check form-check-inline">
                 <input class="form-check-input" type="checkbox" name="visible_days" value="{{ num }}"
                        id="edit_day{{ q.id }}_{{ num }}"
-                       {% if q.visible_days and num in q.visible_days %}checked{% endif %}>
+                       {% if num in day_indexes %}checked{% endif %}>
                 <label class="form-check-label" for="edit_day{{ q.id }}_{{ num }}">{{ name }}</label>
               </div>
             {% endfor %}

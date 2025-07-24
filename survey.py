@@ -17,8 +17,8 @@ def index():
 
     questions = Question.query.filter(
         (Question.visible_days == None) |               # يظهر دائمًا
-        (Question.visible_days == []) |                 # لا أيام محددة
-        (Question.visible_days.contains([today_index])) # يظهر في هذا اليوم
+        (~Question.visible_days.any()) |                 # لا أيام محددة
+        (Question.visible_days.any(day_index=today_index)) # يظهر في هذا اليوم
     ).all()
 
     answered_ids = [
@@ -36,14 +36,31 @@ def submit():
         if not question:
             continue  # تجاهل الأسئلة المحذوفة
 
+        value_cleaned = value.strip().lower()
+        points = 0  # القيمة الافتراضية
+
+        # --- تحديد النقاط ---
+        if question.question_type == 'numeric':
+            try:
+                numeric_value = float(value_cleaned)
+                if numeric_value > 0:
+                    points = numeric_value
+            except ValueError:
+                points = 0  # إذا لم تكن القيمة رقمًا
+        else:  # boolean
+            if value_cleaned in ['yes', 'نعم']:
+                points = question.points
+
+        # --- إضافة أو تعديل الإجابة ---
         try:
             answer = Answer(
                 student_id=current_user.id,
                 question_id=question.id,
                 question_text=question.text,
-                question_points=question.points,  # ✅ لتخزين النقاط
+                question_points=points,
+                question_type=question.question_type,
                 date=date.today(),
-                answer=value
+                answer=value_cleaned  # ← نخزنها موحدة
             )
             db.session.add(answer)
             db.session.commit()
@@ -55,9 +72,10 @@ def submit():
                 date=date.today()
             ).first()
             if existing:
-                existing.answer = value
+                existing.answer = value_cleaned
                 existing.question_text = question.text
-                existing.question_points = question.points  # ✅ تحديث النقاط
+                existing.question_points = points
+                existing.question_type = question.question_type
                 db.session.commit()
 
     return redirect(url_for('survey.index'))

@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, g, flash
 from flask_login import login_required, current_user
 from datetime import date
-from models import Answer, Question, Student, ManualPoint, db
-from sqlalchemy import func
+from models import Answer, Question, Student, ManualPoint, VisibleDay, db
+from sqlalchemy import Integer, cast, func, or_
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -22,25 +22,42 @@ def dashboard():
     questions = Question.query.order_by(Question.id).all()
 
     points_summary = []
+
     for s in students:
-        daily = db.session.query(func.coalesce(func.sum(Answer.question_points), 0)).filter(
-            Answer.student_id == s.id,
-            Answer.date == date.today(),
-            Answer.answer == 'yes'
-            ).scalar()
-        
-        total = db.session.query(func.coalesce(func.sum(Answer.question_points), 0)).filter(
-            Answer.student_id == s.id,
-            Answer.answer == 'yes'
-            ).scalar()
-        
+        answers = (
+            db.session.query(Answer, Question)
+            .outerjoin(Question, Answer.question_id == Question.id)
+            .filter(Answer.student_id == s.id)
+            .all()
+        )
+
+        total_points = 0
+        daily_points = 0
+
+        for ans, q in answers:
+            pts = 0
+            if q:
+                if q.question_type == 'numeric':
+                    try:
+                        pts = float(ans.answer)
+                    except (ValueError, TypeError):
+                        pts = 0
+                else:
+                    if ans.answer.lower() in ['yes', 'نعم']:
+                        pts = q.points or 0
+
+            if ans.date == date.today():
+                daily_points += pts
+            total_points += pts
+
         manual = db.session.query(func.coalesce(func.sum(ManualPoint.points), 0)).filter_by(student_id=s.id).scalar()
+        total_combined = total_points + manual
 
         points_summary.append({
             'id': s.id,
             'full_name': s.full_name,
-            'daily_points': daily,
-            'total_points': total,
+            'daily_points': daily_points,
+            'total_points': total_combined,
             'manual_points': manual
         })
 
@@ -51,15 +68,30 @@ def add_question():
     text = request.form['question']
     points = request.form.get('points', type=int)
     visible_days_raw = request.form.getlist('visible_days')  # ← قائمة نصوص من checkboxes
+    question_type = request.form.get('question_type', 'boolean')
 
     if not text or points is None:
         flash('يجب إدخال نص السؤال والنقاط')
         return redirect(url_for('admin.dashboard'))
 
-    # تحويل الأيام إلى أرقام (int)، أو None إن لم يتم اختيار شيء
-    visible_days = [int(d) for d in visible_days_raw] if visible_days_raw else None
+    # تحويل الأيام إلى كائنات VisibleDay
+    visible_days = []
+    if visible_days_raw:
+        for day in visible_days_raw:
+            try:
+                day_index = int(day)
+                visible_days.append(VisibleDay(day_index=day_index))
+            except ValueError:
+                continue
 
-    question = Question(text=text, points=points, visible_days=visible_days)
+    # إنشاء السؤال مع الأيام المرتبطة
+    question = Question(
+        text=text,
+        points=points,
+        question_type=question_type,
+        visible_days=visible_days  # ← كائنات، وليس أرقام
+    )
+
     db.session.add(question)
     db.session.commit()
 
@@ -70,9 +102,9 @@ def add_question():
 def delete_question(question_id):
     question = Question.query.get_or_404(question_id)
 
-    # أزل الربط مع الإجابات بدلًا من حذفها
-    for answer in question.answers:
-        answer.question_id = None  # إزالة الربط
+    # أزل الربط مع الإجابات بدلًا من حذفها (بشكل مباشر وفعّال)
+    Answer.query.filter_by(question_id=question.id).update({'question_id': None})
+
     db.session.delete(question)
     db.session.commit()
 
@@ -85,9 +117,20 @@ def edit_question(question_id):
 
     question.text = request.form['text']
     question.points = request.form.get('points', type=int)
+    question.question_type = request.form.get('question_type', 'boolean')
 
+    # حذف الأيام القديمة
+    question.visible_days.clear()
+
+    # إعادة الإضافة إن وجدت أيام محددة
     visible_days_raw = request.form.getlist('visible_days')
-    question.visible_days = [int(d) for d in visible_days_raw] if visible_days_raw else None
+    if visible_days_raw:
+        for day in visible_days_raw:
+            try:
+                day_index = int(day)
+                question.visible_days.append(VisibleDay(day_index=day_index))
+            except ValueError:
+                continue
 
     db.session.commit()
     flash("تم تعديل السؤال بنجاح ✅", "success")
@@ -101,7 +144,11 @@ def report():
         flash("غير مصرح لك بالدخول إلى هذه الصفحة", "error")
         return redirect(url_for("auth.login"))
 
-    answers = Answer.query.all()
+    answers = (
+        db.session.query(Answer, Question)
+        .outerjoin(Question, Answer.question_id == Question.id)
+        .all()
+    )
 
     # إعداد مجلد الرسوم
     chart_dir = os.path.join("static", "charts")
@@ -111,19 +158,42 @@ def report():
         if os.path.isfile(file_path):
             os.remove(file_path)
 
-    # تجهيز البيانات
-    df = pd.DataFrame([{
-        "student": a.student.full_name if a.student else "غير معروف",
-        "question": a.question_text or "—",
-        "answer": a.answer or "—",
-        "date": a.date.strftime("%Y-%m-%d") if a.date else "—",
-        "points": a.question_points or 0
-    } for a in answers])
+    df = []
+    for ans, q in answers:
+        if q:
+            if q.question_type == 'numeric':
+                try:
+                    pts = float(ans.answer)
+                except (ValueError, TypeError):
+                    pts = 0
+            else:
+                pts = q.points if ans.answer.lower() in ['yes', 'نعم'] else 0
+        else:
+            pts = 0  # السؤال محذوف، لكن نعرضه بدون نقاط
+
+        df.append({
+            "student": ans.student.full_name if ans.student else "غير معروف",
+            "question": q.text if q else "—",
+            "answer": ans.answer or "—",
+            "date": ans.date.strftime("%Y-%m-%d") if ans.date else "—",
+            "points": pts
+        })
+
+    df = pd.DataFrame(df)
+
+    # 🔥 حساب الطالب الأعلى نقاطًا
+    top_student_row = df.groupby('student')['points'].sum().sort_values(ascending=False).reset_index()
+    if not top_student_row.empty:
+        top_student_name = top_student_row.iloc[0]['student']
+        top_student_points = top_student_row.iloc[0]['points']
+    else:
+        top_student_name = "لا يوجد"
+        top_student_points = 0
 
     chart_paths = []
 
     if not df.empty:
-        # الرسم 1: Bar - أعلى 10 طلاب نقاطًا (عمودي)
+        # الرسم 1: أعلى 10 طلاب
         top_users = (
             df.groupby('student')['points']
             .sum()
@@ -133,7 +203,7 @@ def report():
 
         plt.figure(figsize=(10, 6))
         sns.barplot(x=top_users.index, y=top_users.values, palette="viridis")
-        plt.title('🏆 أعلى 10 طلاب نقاطًا')
+        plt.title(' أعلى 10 طلاب نقاطًا')
         plt.xlabel('الطالب')
         plt.ylabel('مجموع النقاط')
         plt.xticks(rotation=45, ha='right')
@@ -143,15 +213,15 @@ def report():
         chart_paths.append('charts/top_students_vertical.png')
         plt.close()
 
-        # الرسم 2: لكل سؤال، من الطالب الذي أجاب بـ "نعم" أكثر
-        yes_df = df[df['answer'] == 'yes']
+        # الرسم 2: من أجاب بـ "نعم" لكل سؤال
+        yes_df = df[df['answer'].str.lower() == 'yes']
         if not yes_df.empty:
             counts = yes_df.groupby(['question', 'student']).size().reset_index(name='count')
             pivot_df = counts.pivot(index='question', columns='student', values='count').fillna(0)
 
             plt.figure(figsize=(12, 6))
             pivot_df.plot(kind='bar', stacked=True, colormap='tab20', figsize=(12, 6))
-            plt.title('📌 الطلاب الأكثر إجابة بـ "نعم" لكل سؤال')
+            plt.title(' الطلاب الأكثر إجابة بـ "نعم" لكل سؤال')
             plt.xlabel('السؤال')
             plt.ylabel('عدد مرات الإجابة بـ نعم')
             plt.xticks(rotation=45, ha='right')
@@ -164,18 +234,67 @@ def report():
 
     return render_template(
         "report.html",
-        answers=answers,
+        answers=[a for a, _ in answers],
         chart_paths=chart_paths,
-        data=df.to_dict(orient='records')
-    )
+        data=df.to_dict(orient='records'),
+        top_student_name=top_student_name,
+        top_student_points=top_student_points
+        )
 
 @admin_bp.route('/student/<int:student_id>')
 def student_details(student_id):
     student = Student.query.get_or_404(student_id)
-    answers = Answer.query.filter_by(student_id=student.id).order_by(Answer.date.desc()).all()
+
+    # جلب الإجابات مع معلومات السؤال
+    answers = (
+        db.session.query(
+            Answer,
+            Question.text.label('question_text'),
+            Question.points.label('question_points'),
+            Question.question_type.label('question_type')
+        )
+        .join(Question, Answer.question_id == Question.id)
+        .filter(Answer.student_id == student.id)
+        .order_by(Answer.date.desc())
+        .all()
+    )
+
     manual = ManualPoint.query.filter_by(student_id=student.id).order_by(ManualPoint.date.desc()).all()
 
-    return render_template('student_details.html', student=student, answers=answers, manual=manual)
+    formatted_answers = []
+    total_points = 0
+
+    for ans, text, points, q_type in answers:
+        # حساب النقاط حسب نوع السؤال
+        if q_type == 'numeric':
+            try:
+                pts = float(ans.answer)
+            except ValueError:
+                pts = 0
+        else:
+            pts = points if ans.answer.lower() in ['yes', 'نعم'] else 0
+
+        total_points += pts
+
+        formatted_answers.append({
+            'question_text': text,
+            'question_points': pts,
+            'question_type': q_type,
+            'answer': ans.answer,
+            'date': ans.date
+            })
+
+    # إضافة النقاط اليدوية
+    for m in manual:
+        total_points += m.points
+
+    return render_template(
+        'student_details.html',
+        student=student,
+        answers=formatted_answers,
+        manual=manual,
+        total_points=total_points
+    )
 
 @admin_bp.route('/add-points/<int:student_id>', methods=['POST'])
 def add_manual_points(student_id):

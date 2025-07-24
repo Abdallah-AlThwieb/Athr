@@ -7,20 +7,26 @@
 
   <form method="post" action="{{ url_for('survey.submit') }}">
     {% for q in questions %}
-      <div class="question-block p-3 mb-4 rounded shadow-sm bg-light-subtle dark-bg border border-secondary">
+      <div class="question-box p-3 mb-4 rounded shadow-sm bg-light-subtle dark-bg border border-secondary">
         <p class="mb-2 fs-5 fw-semibold text-dark-emphasis dark-text">{{ q.text }}</p>
 
         {% if q.id in answered_ids %}
           <p class="text-success fw-semibold">✅ تمت الإجابة</p>
         {% else %}
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="{{ q.id }}" value="yes" id="yes{{ q.id }}" required>
-            <label class="form-check-label" for="yes{{ q.id }}">نعم</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="{{ q.id }}" value="no" id="no{{ q.id }}">
-            <label class="form-check-label" for="no{{ q.id }}">لا</label>
-          </div>
+          {% if q.question_type == 'boolean' %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="{{ q.id }}" value="نعم" id="yes{{ q.id }}" required>
+              <label class="form-check-label" for="yes{{ q.id }}">نعم</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="{{ q.id }}" value="لا" id="no{{ q.id }}">
+              <label class="form-check-label" for="no{{ q.id }}">لا</label>
+            </div>
+          {% elif q.question_type == 'numeric' %}
+            <input class="form-control w-25" type="number" name="{{ q.id }}" min="0" placeholder="أدخل الرقم" required>
+          {% else %}
+            <p class="text-danger">⚠️ نوع غير معروف</p>
+          {% endif %}
         {% endif %}
       </div>
     {% endfor %}

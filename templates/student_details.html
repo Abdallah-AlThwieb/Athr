@@ -4,7 +4,7 @@
 
 <div class="container mt-4" dir="rtl">
   <h2 class="mb-4 text-primary">🧑‍🎓 تفاصيل الطالب: <strong>{{ student.full_name }}</strong></h2>
-
+  
   <h4 class="text-secondary">📝 الإجابات:</h4>
   <div class="table-responsive mb-4">
     <table class="table table-bordered table-hover text-center align-middle bg-white shadow-sm">
@@ -50,6 +50,9 @@
       </tbody>
     </table>
   </div>
+  <h4 class="text-success text-center mb-4">
+    🧮 مجموع النقاط الكلي: <strong>{{ total_points }}</strong>
+  </h4>
 
   <h5 class="text-secondary">➕ إضافة نقاط أخرى:</h5>
   <form method="post" action="{{ url_for('admin.add_manual_points', student_id=student.id) }}" class="row g-2 mb-4">
